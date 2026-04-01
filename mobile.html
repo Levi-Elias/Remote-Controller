@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Curve Fever Controller</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+        }
+        .controller {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            max-width: 350px;
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        h1 {
+            margin-bottom: 30px;
+            font-size: 2em;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        input {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            box-sizing: border-box;
+        }
+        input::placeholder {
+            color: #666;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 50px;
+            gap: 20px;
+        }
+        .buttons button {
+            width: 48%;
+            font-size: 24px;
+            padding: 25px;
+            border-radius: 15px;
+        }
+        .buttons button:first-child {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+        }
+        .buttons button:last-child {
+            background: linear-gradient(45deg, #45b7d1, #96c93d);
+        }
+        .status {
+            margin-top: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+        }
+        .status p {
+            margin: 5px 0;
+            font-size: 16px;
+        }
+        .join-form, .game-controls {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="controller">
+        <h1>Curve Fever Controller</h1>
+        
+        <div class="join-form">
+            <input type="text" id="gameCode" placeholder="Enter 6-letter Game Code" maxlength="6" style="text-transform: uppercase;">
+            <input type="text" id="playerName" placeholder="Enter Your Name">
+            <button id="joinBtn">Join Game</button>
+        </div>
+        
+        <div class="game-controls">
+            <div class="status">
+                <p>Name: <span id="playerNameDisplay"></span></p>
+                <p>Status: <span id="status">Waiting to join</span></p>
+            </div>
+            <div class="buttons">
+                <button id="leftBtn">←</button>
+                <button id="rightBtn">→</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ws = new WebSocket('ws://localhost:3002');
+        let playerId = null;
+        let playerName = '';
+
+        ws.onopen = () => {
+            console.log('Connected');
+        };
+
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.type === 'init') {
+                playerId = data.playerId;
+            } else if (data.type === 'error') {
+                alert(data.message);
+            } else if (data.type === 'reset') {
+                // Reset to join form
+                document.querySelector('.join-form').style.display = 'block';
+                document.querySelector('.game-controls').style.display = 'none';
+                document.getElementById('status').textContent = 'Game reset - join again';
+                playerName = '';
+            }
+        };
+
+        ws.onclose = () => {
+            document.getElementById('status').textContent = 'Disconnected';
+        };
+
+        document.getElementById('joinBtn').addEventListener('click', () => {
+            const code = document.getElementById('gameCode').value.toUpperCase();
+            playerName = document.getElementById('playerName').value.trim();
+            if (code.length === 6 && playerName) {
+                ws.send(JSON.stringify({ type: 'join', code, name: playerName }));
+                document.querySelector('.join-form').style.display = 'none';
+                document.querySelector('.game-controls').style.display = 'block';
+                document.getElementById('playerNameDisplay').textContent = playerName;
+                document.getElementById('status').textContent = 'Joined';
+            } else {
+                alert('Please enter a valid 6-letter code and name');
+            }
+        });
+
+        document.getElementById('leftBtn').addEventListener('touchstart', () => {
+            ws.send(JSON.stringify({ type: 'turn', direction: 'left' }));
+        });
+
+        document.getElementById('rightBtn').addEventListener('touchstart', () => {
+            ws.send(JSON.stringify({ type: 'turn', direction: 'right' }));
+        });
+    </script>
+</body>
+</html>

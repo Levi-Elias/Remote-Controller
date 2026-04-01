@@ -1,0 +1,103 @@
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+    background-color: #000;
+    color: white;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+}
+
+.top-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+}
+
+h1 {
+    margin: 0;
+    font-size: 24px;
+}
+
+.game-info {
+    font-size: 18px;
+}
+
+.players-table {
+    background-color: rgba(0, 0, 0, 0.8);
+    padding: 10px;
+    border-radius: 5px;
+    max-width: 300px;
+}
+
+.players-table h2 {
+    margin: 0 0 10px 0;
+    font-size: 16px;
+}
+
+table {
+    border-collapse: collapse;
+    color: white;
+    font-size: 12px;
+    width: 100%;
+}
+
+th, td {
+    padding: 5px;
+    border: 1px solid #333;
+    text-align: center;
+}
+
+th {
+    background-color: #333;
+}
+
+.game-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+}
+
+canvas {
+    flex: 1;
+    background-color: #111;
+    border-radius: 5px;
+    border: 3px solid white;
+    max-height: 70vh; /* Limit height to 70% of viewport */
+    max-width: 80vw; /* Limit width to 80% of viewport */
+    margin: 0 auto; /* Center horizontally */
+}
+
+.controls {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 10px;
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 14px;
+    background-color: #333;
+    color: white;
+    border: 1px solid white;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+button:hover {
+    background-color: #555;
+}
+
+#status {
+    text-align: center;
+    margin-top: 5px;
+    font-size: 14px;
+}

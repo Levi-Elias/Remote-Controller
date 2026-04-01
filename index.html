@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Curve Fever Game Board</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+
+<body>
+    <div class="top-section">
+        <div>
+            <h1>Curve Fever</h1>
+            <div class="game-info">
+                <strong id="gameCode">Loading...</strong>
+            </div>
+        </div>
+        <div class="players-table">
+            <h2>Players</h2>
+            <table id="playersTable">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Score</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="playersBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="game-area">
+        <canvas id="gameCanvas"></canvas>
+        <div class="controls">
+            <button id="startBtn">Start Game</button>
+            <button id="resetBtn">Reset</button>
+        </div>
+        <div id="status">Waiting for players</div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const ws = new WebSocket('ws://localhost:3002');
+        let gameState = null;
+        let gameCode = '';
+
+        // Set canvas to fit game area with max width
+        function resizeCanvas() {
+            const gameArea = document.querySelector('.game-area');
+            const controlsHeight = document.querySelector('.controls').offsetHeight +
+                document.getElementById('status').offsetHeight + 30;
+            canvas.width = Math.min(gameArea.clientWidth * 0.8, 1200); // Max 80% of area or 1200px
+            canvas.height = gameArea.clientHeight - controlsHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        // Delay resize to ensure elements are rendered
+        setTimeout(resizeCanvas, 100);
+
+        ws.onopen = () => {
+            document.getElementById('status').textContent = 'Connected';
+        };
+
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.type === 'init') {
+                gameCode = data.gameCode;
+                document.getElementById('gameCode').textContent = 'Game Code: ' + gameCode;
+                gameState = data.gameState;
+                updatePlayersTable();
+            } else if (data.type === 'state') {
+                gameState = data.gameState;
+                render();
+                updatePlayersTable();
+            } else if (data.type === 'reset') {
+                console.log('Reset message received:', data);
+                gameCode = data.gameCode;
+                document.getElementById('gameCode').textContent = 'Game Code: ' + gameCode;
+                gameState.players = [];
+                gameState.gameStarted = false;
+                updatePlayersTable();
+                render(); // Clear the canvas
+                console.log('Reset applied');
+            }
+        };
+
+        ws.onclose = () => {
+            document.getElementById('status').textContent = 'Disconnected';
+        };
+
+        document.getElementById('startBtn').addEventListener('click', () => {
+            ws.send(JSON.stringify({ type: 'startGame' }));
+        });
+
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            console.log('Reset button clicked');
+            console.log('WebSocket readyState:', ws.readyState);
+            if (ws.readyState !== WebSocket.OPEN) {
+                console.log('WebSocket not open, attempting to reconnect...');
+                connectWebSocket();
+                // Wait a bit for connection
+                setTimeout(() => {
+                    if (ws.readyState === WebSocket.OPEN) {
+                        ws.send(JSON.stringify({ type: 'reset' }));
+                        console.log('Reset message sent after reconnect');
+                    } else {
+                        console.log('Failed to reconnect');
+                    }
+                }, 1000);
+            } else {
+                try {
+                    ws.send(JSON.stringify({ type: 'reset' }));
+                    console.log('Reset message sent successfully');
+                } catch (error) {
+                    console.error('Error sending reset message:', error);
+                }
+            }
+        });
+
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw players
+            gameState.players.forEach(player => {
+                ctx.strokeStyle = player.color;
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                player.trail.forEach((point, index) => {
+                    const x = point.x * canvas.width / gameState.canvasWidth;
+                    const y = point.y * canvas.height / gameState.canvasHeight;
+                    if (index === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                });
+                ctx.stroke();
+
+                if (player.alive) {
+                    ctx.fillStyle = player.color;
+                    ctx.beginPath();
+                    ctx.arc(player.x * canvas.width / gameState.canvasWidth,
+                        player.y * canvas.height / gameState.canvasHeight, 5, 0, 2 * Math.PI);
+                    ctx.fill();
+                }
+            });
+
+            // Draw power-ups
+            gameState.powerUps.forEach(powerUp => {
+                ctx.fillStyle = 'yellow';
+                ctx.beginPath();
+                ctx.arc(powerUp.x * canvas.width / gameState.canvasWidth,
+                    powerUp.y * canvas.height / gameState.canvasHeight, 10, 0, 2 * Math.PI);
+                ctx.fill();
+            });
+        }
+
+        function updatePlayersTable() {
+            const tbody = document.getElementById('playersBody');
+            tbody.innerHTML = '';
+            gameState.players.forEach(player => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${player.name || 'Player ' + player.id}</td>
+                    <td>${player.score}</td>
+                    <td>${player.alive ? 'Alive' : 'Dead'}</td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            if (!gameState.gameRunning && gameState.players.length > 0) {
+                document.getElementById('status').textContent = 'Game Over';
+            } else if (gameState.gameRunning) {
+                document.getElementById('status').textContent = 'Game Running';
+            } else {
+                document.getElementById('status').textContent = 'Waiting for players';
+            }
+        }
+    </script>
+</body>
+
+</html>
