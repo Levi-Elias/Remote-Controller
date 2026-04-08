@@ -79,8 +79,7 @@
                 console.log('Reset message received:', data);
                 gameCode = data.gameCode;
                 document.getElementById('gameCode').textContent = 'Game Code: ' + gameCode;
-                gameState.players = [];
-                gameState.gameStarted = false;
+                gameState = data.gameState;
                 updatePlayersTable();
                 render(); // Clear the canvas
                 console.log('Reset applied');

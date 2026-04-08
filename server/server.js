@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Generate 6-letter game code
-const gameCode = generateGameCode();
+let gameCode = generateGameCode();
 
 function generateGameCode() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -17,9 +17,9 @@ function generateGameCode() {
 
 // HTTP server to serve static files
 const server = http.createServer((req, res) => {
-    let filePath = path.join(__dirname, req.url === '/' ? 'index.html' : req.url);
+    let filePath = path.join(__dirname, '../public', req.url === '/' ? 'index.html' : req.url);
     if (req.url === '/mobile') {
-        filePath = path.join(__dirname, 'mobile.html');
+        filePath = path.join(__dirname, '../public/mobile.html');
     }
     fs.readFile(filePath, (err, data) => {
         if (err) {
@@ -76,7 +76,7 @@ wss.on('connection', ws => {
             const data = JSON.parse(message);
             handleMessage(ws, data);
         } catch (error) {
-            console.error('Error parsing message:', error);
+            console.error('Error parsing or handling message:', error);
         }
     });
 
