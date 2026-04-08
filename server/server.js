@@ -104,7 +104,8 @@ function handleMessage(ws, data) {
                     trail: [],
                     score: 0,
                     alive: true,
-                    input: { left: false, right: false }
+                    input: { left: false, right: false },
+                    holeTimer: 0
                 };
                 gameState.players.push(newPlayer);
                 broadcastGameState();
@@ -176,10 +177,15 @@ function gameLoop() {
         player.y += Math.sin(player.direction) * player.speed;
 
         // Random holes
-        if (Math.random() > 0.9) { // 10% chance to create hole
-            // Skip adding to trail for hole
+        if (player.holeTimer > 0) {
+            player.holeTimer--;
         } else {
-            player.trail.push({ x: player.x, y: player.y });
+            if (Math.random() < 0.01) { // 1% chance to start a hole per frame
+                player.holeTimer = 15; // 15 frames duration for the hole
+                player.trail.push(null);
+            } else {
+                player.trail.push({ x: player.x, y: player.y });
+            }
         }
 
         // Check power-up collision
@@ -198,11 +204,21 @@ function gameLoop() {
 
         // Check collisions with trails
         gameState.players.forEach(otherPlayer => {
-            otherPlayer.trail.forEach(point => {
-                if (Math.abs(player.x - point.x) < 5 && Math.abs(player.y - point.y) < 5 && player !== otherPlayer) {
+            const isSelf = player.id === otherPlayer.id;
+            const safeDistance = isSelf ? 20 : 0; // Number of recent trail points to ignore if self
+            
+            for (let i = 0; i < otherPlayer.trail.length - safeDistance; i++) {
+                const point = otherPlayer.trail[i];
+                if (!point) continue; // Skip hole markers
+                
+                const dx = player.x - point.x;
+                const dy = player.y - point.y;
+                const distSquared = dx * dx + dy * dy;
+                
+                if (distSquared < 25) { // Radius * Radius = 5 * 5 = 25
                     player.alive = false;
                 }
-            });
+            }
         });
     });
 

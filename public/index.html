@@ -127,11 +127,20 @@
                 ctx.strokeStyle = player.color;
                 ctx.lineWidth = 3;
                 ctx.beginPath();
-                player.trail.forEach((point, index) => {
+                
+                let lastWasNull = true;
+                player.trail.forEach((point) => {
+                    if (point === null) {
+                        lastWasNull = true;
+                        return; // Skip null markers for holes
+                    }
+                    
                     const x = point.x * canvas.width / gameState.canvasWidth;
                     const y = point.y * canvas.height / gameState.canvasHeight;
-                    if (index === 0) {
+                    
+                    if (lastWasNull) {
                         ctx.moveTo(x, y);
+                        lastWasNull = false;
                     } else {
                         ctx.lineTo(x, y);
                     }
