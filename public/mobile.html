@@ -204,7 +204,7 @@
         <div class="join-form">
             <input type="text" id="gameCode" placeholder="Enter 6-letter Game Code" maxlength="6"
                 style="text-transform: uppercase;">
-            <input type="text" id="playerName" placeholder="Enter Your Name">
+            <input type="text" id="playerName" placeholder="Enter Your Name" maxlength="20">
             <button id="joinBtn">Join Game</button>
         </div>
 
@@ -221,7 +221,7 @@
     </div>
 
     <script>
-        const ws = new WebSocket('ws://localhost:3002');
+        const ws = new WebSocket('ws://' + window.location.hostname + ':3002');
         let playerId = null;
         let playerName = '';
 
@@ -262,13 +262,37 @@
             }
         });
 
-        document.getElementById('leftBtn').addEventListener('touchstart', () => {
-            ws.send(JSON.stringify({ type: 'turn', direction: 'left' }));
-        });
+        let activeInput = { left: false, right: false };
 
-        document.getElementById('rightBtn').addEventListener('touchstart', () => {
-            ws.send(JSON.stringify({ type: 'turn', direction: 'right' }));
-        });
+        function sendInput() {
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'input', input: activeInput }));
+            }
+        }
+
+        const leftBtn = document.getElementById('leftBtn');
+        const rightBtn = document.getElementById('rightBtn');
+
+        const pressLeft = (e) => { e.preventDefault(); activeInput.left = true; sendInput(); };
+        const releaseLeft = (e) => { e.preventDefault(); activeInput.left = false; sendInput(); };
+        
+        const pressRight = (e) => { e.preventDefault(); activeInput.right = true; sendInput(); };
+        const releaseRight = (e) => { e.preventDefault(); activeInput.right = false; sendInput(); };
+
+        // Bind events for holding buttons down
+        leftBtn.addEventListener('mousedown', pressLeft);
+        leftBtn.addEventListener('touchstart', pressLeft, { passive: false });
+        leftBtn.addEventListener('mouseup', releaseLeft);
+        leftBtn.addEventListener('mouseleave', releaseLeft);
+        leftBtn.addEventListener('touchend', releaseLeft);
+        leftBtn.addEventListener('touchcancel', releaseLeft);
+
+        rightBtn.addEventListener('mousedown', pressRight);
+        rightBtn.addEventListener('touchstart', pressRight, { passive: false });
+        rightBtn.addEventListener('mouseup', releaseRight);
+        rightBtn.addEventListener('mouseleave', releaseRight);
+        rightBtn.addEventListener('touchend', releaseRight);
+        rightBtn.addEventListener('touchcancel', releaseRight);
     </script>
 </body>
 

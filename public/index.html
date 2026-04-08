@@ -44,7 +44,7 @@
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        const ws = new WebSocket('ws://localhost:3002');
+        const ws = new WebSocket('ws://' + window.location.hostname + ':3002');
         let gameState = null;
         let gameCode = '';
 

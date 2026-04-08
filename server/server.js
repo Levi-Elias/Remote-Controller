@@ -103,7 +103,8 @@ function handleMessage(ws, data) {
                     color: getRandomColor(),
                     trail: [],
                     score: 0,
-                    alive: true
+                    alive: true,
+                    input: { left: false, right: false }
                 };
                 gameState.players.push(newPlayer);
                 broadcastGameState();
@@ -111,14 +112,10 @@ function handleMessage(ws, data) {
                 ws.send(JSON.stringify({ type: 'error', message: 'Invalid game code or missing name' }));
             }
             break;
-        case 'turn':
+        case 'input':
             const player = gameState.players.find(p => p.id === ws.playerId);
             if (player && player.alive) {
-                if (data.direction === 'left') {
-                    player.direction -= 0.1;
-                } else if (data.direction === 'right') {
-                    player.direction += 0.1;
-                }
+                player.input = data.input;
             }
             break;
         case 'startGame':
@@ -167,6 +164,14 @@ function gameLoop() {
     // Update positions
     gameState.players.forEach(player => {
         if (!player.alive) return;
+
+        if (player.input && player.input.left) {
+            player.direction -= 0.08;
+        }
+        if (player.input && player.input.right) {
+            player.direction += 0.08;
+        }
+
         player.x += Math.cos(player.direction) * player.speed;
         player.y += Math.sin(player.direction) * player.speed;
 
