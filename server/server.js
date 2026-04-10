@@ -58,7 +58,9 @@ let gameState = {
     powerUps: [],
     gameRunning: false,
     canvasWidth: 800,
-    canvasHeight: 600
+    canvasHeight: 600,
+    currentRound: 1,
+    maxRounds: 5
 };
 
 let playerIdCounter = 0;
@@ -134,6 +136,7 @@ function handleMessage(ws, data) {
             gameState.players = [];
             gameState.powerUps = [];
             gameState.gameRunning = false;
+            gameState.currentRound = 1;
             // Broadcast reset to all clients
             wss.clients.forEach(client => {
                 if (client.readyState === WebSocket.OPEN) {
@@ -145,6 +148,29 @@ function handleMessage(ws, data) {
                     }
                 }
             });
+            break;
+        case 'nextRound':
+            console.log('nextRound received, currentRound:', gameState.currentRound, 'maxRounds:', gameState.maxRounds, 'gameRunning:', gameState.gameRunning);
+            if (!gameState.gameRunning && gameState.currentRound < gameState.maxRounds) {
+                gameState.currentRound++;
+                console.log('Starting round', gameState.currentRound);
+                gameState.players.forEach(player => {
+                    player.x = Math.random() * (gameState.canvasWidth - 20) + 10;
+                    player.y = Math.random() * (gameState.canvasHeight - 20) + 10;
+                    player.direction = Math.random() * 2 * Math.PI;
+                    player.speed = 2;
+                    player.trail = [];
+                    player.alive = true;
+                    player.input = { left: false, right: false };
+                    player.holeTimer = 0;
+                });
+                gameState.powerUps = [];
+                gameState.gameRunning = true;
+                broadcastGameState();
+                gameLoop();
+            } else {
+                console.log('nextRound rejected - gameRunning:', gameState.gameRunning, 'round check:', gameState.currentRound < gameState.maxRounds);
+            }
             break;
     }
 }
@@ -206,15 +232,15 @@ function gameLoop() {
         gameState.players.forEach(otherPlayer => {
             const isSelf = player.id === otherPlayer.id;
             const safeDistance = isSelf ? 20 : 0; // Number of recent trail points to ignore if self
-            
+
             for (let i = 0; i < otherPlayer.trail.length - safeDistance; i++) {
                 const point = otherPlayer.trail[i];
                 if (!point) continue; // Skip hole markers
-                
+
                 const dx = player.x - point.x;
                 const dy = player.y - point.y;
                 const distSquared = dx * dx + dy * dy;
-                
+
                 if (distSquared < 25) { // Radius * Radius = 5 * 5 = 25
                     player.alive = false;
                 }

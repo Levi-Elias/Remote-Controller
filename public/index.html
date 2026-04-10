@@ -14,6 +14,7 @@
             <h1>Curve Fever</h1>
             <div class="game-info">
                 <strong id="gameCode">Loading...</strong>
+                <span id="roundInfo" style="margin-left: 20px; font-weight: bold;">Round: 1/5</span>
             </div>
         </div>
         <div class="players-table">
@@ -36,6 +37,7 @@
         <canvas id="gameCanvas"></canvas>
         <div class="controls">
             <button id="startBtn">Start Game</button>
+            <button id="nextRoundBtn" style="display: none;">Next Round</button>
             <button id="resetBtn">Reset</button>
         </div>
         <div id="status">Waiting for players</div>
@@ -94,6 +96,12 @@
             ws.send(JSON.stringify({ type: 'startGame' }));
         });
 
+        document.getElementById('nextRoundBtn').addEventListener('click', () => {
+            console.log('Next Round button clicked, ws readyState:', ws.readyState);
+            ws.send(JSON.stringify({ type: 'nextRound' }));
+            console.log('nextRound message sent');
+        });
+
         document.getElementById('resetBtn').addEventListener('click', () => {
             console.log('Reset button clicked');
             console.log('WebSocket readyState:', ws.readyState);
@@ -127,17 +135,17 @@
                 ctx.strokeStyle = player.color;
                 ctx.lineWidth = 3;
                 ctx.beginPath();
-                
+
                 let lastWasNull = true;
                 player.trail.forEach((point) => {
                     if (point === null) {
                         lastWasNull = true;
                         return; // Skip null markers for holes
                     }
-                    
+
                     const x = point.x * canvas.width / gameState.canvasWidth;
                     const y = point.y * canvas.height / gameState.canvasHeight;
-                    
+
                     if (lastWasNull) {
                         ctx.moveTo(x, y);
                         lastWasNull = false;
@@ -172,19 +180,49 @@
             gameState.players.forEach(player => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${player.name || 'Player ' + player.id}</td>
+                    <td>
+                        <span style="display:inline-block; width:12px; height:12px; background-color:${player.color}; border-radius:50%; margin-right:8px; vertical-align:middle;"></span>
+                        ${player.name || 'Player ' + player.id}
+                    </td>
                     <td>${player.score}</td>
                     <td>${player.alive ? 'Alive' : 'Dead'}</td>
                 `;
                 tbody.appendChild(row);
             });
 
-            if (!gameState.gameRunning && gameState.players.length > 0) {
-                document.getElementById('status').textContent = 'Game Over';
-            } else if (gameState.gameRunning) {
+            const roundInfo = document.getElementById('roundInfo');
+            if (roundInfo && gameState.currentRound) {
+                roundInfo.textContent = 'Round: ' + gameState.currentRound + '/' + gameState.maxRounds;
+            }
+
+            const startBtn = document.getElementById('startBtn');
+            const nextRoundBtn = document.getElementById('nextRoundBtn');
+
+            if (gameState.gameRunning) {
                 document.getElementById('status').textContent = 'Game Running';
+                startBtn.style.display = 'none';
+                nextRoundBtn.style.display = 'none';
+            } else if (gameState.players.length > 0) {
+                const roundStarted = gameState.players.some(p => p.trail.length > 0);
+                if (!roundStarted) {
+                    document.getElementById('status').textContent = 'Waiting to start';
+                    startBtn.style.display = 'inline-block';
+                    nextRoundBtn.style.display = 'none';
+                } else {
+                    if (gameState.currentRound >= gameState.maxRounds) {
+                        document.getElementById('status').textContent = 'Game Over';
+                        startBtn.style.display = 'none';
+                        nextRoundBtn.style.display = 'none';
+                    } else {
+                        document.getElementById('status').textContent = 'Round Finished';
+                        startBtn.style.display = 'none';
+                        nextRoundBtn.style.display = 'inline-block';
+                    }
+                }
             } else {
                 document.getElementById('status').textContent = 'Waiting for players';
+                startBtn.style.display = 'inline-block';
+                nextRoundBtn.style.display = 'none';
             }
         }
     </script>
