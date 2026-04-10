@@ -210,7 +210,8 @@
                     nextRoundBtn.style.display = 'none';
                 } else {
                     if (gameState.currentRound >= gameState.maxRounds) {
-                        document.getElementById('status').textContent = 'Game Over';
+                        const winner = gameState.players.reduce((best, p) => p.score > best.score ? p : best, gameState.players[0]);
+                        document.getElementById('status').textContent = '🏆 Winner: ' + (winner.name || 'Player ' + winner.id) + ' with ' + winner.score + ' points!';
                         startBtn.style.display = 'none';
                         nextRoundBtn.style.display = 'none';
                     } else {

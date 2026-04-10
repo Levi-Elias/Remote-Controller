@@ -98,8 +98,8 @@ function handleMessage(ws, data) {
                 const newPlayer = {
                     id: ws.playerId,
                     name: data.name,
-                    x: Math.random() * (gameState.canvasWidth - 20) + 10,
-                    y: Math.random() * (gameState.canvasHeight - 20) + 10,
+                    x: Math.random() * (gameState.canvasWidth - 200) + 100,
+                    y: Math.random() * (gameState.canvasHeight - 200) + 100,
                     direction: Math.random() * 2 * Math.PI,
                     speed: 2,
                     color: getRandomColor(),
@@ -155,8 +155,8 @@ function handleMessage(ws, data) {
                 gameState.currentRound++;
                 console.log('Starting round', gameState.currentRound);
                 gameState.players.forEach(player => {
-                    player.x = Math.random() * (gameState.canvasWidth - 20) + 10;
-                    player.y = Math.random() * (gameState.canvasHeight - 20) + 10;
+                    player.x = Math.random() * (gameState.canvasWidth - 200) + 100;
+                    player.y = Math.random() * (gameState.canvasHeight - 200) + 100;
                     player.direction = Math.random() * 2 * Math.PI;
                     player.speed = 2;
                     player.trail = [];
